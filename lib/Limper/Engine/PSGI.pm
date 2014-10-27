@@ -1,35 +1,34 @@
 package Limper::Engine::PSGI;
-$Limper::Engine::PSGI::VERSION = '0.001';
+$Limper::Engine::PSGI::VERSION = '0.002';
 use base 'Limper';
 use 5.10.0;
 use strict;
 use warnings;
 
-package Limper;
-$Limper::VERSION = '0.001';
+package		# newline because Dist::Zilla::Plugin::PkgVersion and PAUSE indexer
+  Limper;
+
 sub get_psgi {
     my ($env) = @_;
 
     delete response->{$_} for keys %{&response};
-    response->{headers} = [];
+    response->{headers} = {};
 
     delete request->{$_} for keys %{&request};
     request->{method}      = $env->{REQUEST_METHOD};
     request->{uri}         = $env->{REQUEST_URI};
     request->{version}     = $env->{SERVER_PROTOCOL};
     request->{remote_host} = $env->{REMOTE_HOST};
-    request->{headers}     = [];
-    request->{hheaders}    = {};
+    request->{headers}    = {};
 
-    push @{request->{headers}}, 'content-length', $env->{CONTENT_LENGTH} if exists $env->{CONTENT_LENGTH};
-    push @{request->{headers}}, 'content-type', $env->{CONTENT_TYPE} if exists $env->{CONTENT_TYPE};
+    request->{headers}{'content-length'} = $env->{CONTENT_LENGTH} if exists $env->{CONTENT_LENGTH};
+    request->{headers}{'content-type'} = $env->{CONTENT_TYPE} if exists $env->{CONTENT_TYPE};
     for my $header (grep { /^HTTP_/ } keys %$env) {
         my $name = lc $header;
         $name =~ s/^http_//;
         $name =~ s/_/-/g;
         my @values = split /, /, $env->{$header};
-        push @{request->{headers}}, $name, $_ for @values;
-        request->{hheaders}{$name} = @values > 1 ? \@values : $values[0];
+        request->{headers}{$name} = @values > 1 ? \@values : $values[0];
     }
     # this covers both requests with Content-Length: <INT> and Tranfer-Encoding: chunked
     $env->{'psgi.input'}->read(request->{body}, $env->{CONTENT_LENGTH}) if exists $env->{CONTENT_LENGTH};
@@ -50,7 +49,7 @@ hook request_handler => sub {
 hook response_handler => sub {
     [
         response->{status},
-        response->{headers},
+        [ headers ],
         defined response->{body} ? (ref response->{body} ? response->{body} : [response->{body}]) : [],
     ];
 };
@@ -65,7 +64,7 @@ Limper::Engine::PSGI - PSGI engine for Limper
 
 =head1 VERSION
 
-version 0.001
+version 0.002
 
 =head1 SYNOPSIS
 
@@ -90,7 +89,8 @@ request into one that B<Limper> understands.
 
 Note that unlike other hooks, only the first B<request_handler> and
 B<response_handler> is used, so care should be taken to load this first and
-not load something else that also expects to make use of these hooks.
+not load another B<Limper::Engine::> that also expects to make use of these
+hooks.
 
 =head1 EXPORTS
 

@@ -13,17 +13,14 @@ meta-spec:
   version: 1.4
 name: Limper-Engine-PSGI
 provides:
-  Limper:
-    file: lib/Limper/Engine/PSGI.pm
-    version: 0.001
   Limper::Engine::PSGI:
     file: lib/Limper/Engine/PSGI.pm
-    version: 0.001
+    version: 0.002
 requires:
-  Limper: 0.010
+  Limper: 0.012
   perl: v5.10.0
   strict: 0
   warnings: 0
 resources:
   repository: https://gitable.org/ashley/limper-engine-psgi.git
-version: 0.001
+version: 0.002
